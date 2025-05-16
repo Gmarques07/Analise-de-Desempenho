@@ -1,71 +1,74 @@
-class No:
-    def __init__(self, valor):
-        self.valor = valor
-        self.prox = None
+import time
+import tracemalloc
 
-class ListaEncadeada:
-    def __init__(self):
-        self.head = None
+def bubble_sort(lista):
+    n = len(lista)
+    for i in range(n):
+        for j in range(n - i - 1):
+            if lista[j] > lista[j + 1]:
+                lista[j], lista[j + 1] = lista[j + 1], lista[j]
+    return lista
 
-    def inserir(self, valor, pos):
-        novo = No(valor)
-        if pos <= 0 or not self.head:
-            novo.prox = self.head
-            self.head = novo
-            return
-        atual = self.head
-        indice = 0
-        while atual.prox and indice < pos - 1:
-            atual = atual.prox
-            indice += 1
-        novo.prox = atual.prox
-        atual.prox = novo
+def quick_sort(lista):
+    if len(lista) <= 1:
+        return lista
+    else:
+        pivot = lista[-1]
+        menores = [x for x in lista[:-1] if x <= pivot]
+        maiores = [x for x in lista[:-1] if x > pivot]
+        return quick_sort(menores) + [pivot] + quick_sort(maiores)
 
-    def remover(self, valor):
-        atual = self.head
-        anterior = None
-        while atual:
-            if atual.valor == valor:
-                if anterior:
-                    anterior.prox = atual.prox
-                else:
-                    self.head = atual.prox
-                return
-            anterior = atual
-            atual = atual.prox
+def read_numeros(file_path):
+    numeros = []
+    with open(file_path, 'r') as file:
+        for line in file:
+            try:
+                number = float(line.strip())
+                numeros.append(number)
+            except:
+                pass
+    return numeros
 
-    def imprimir(self):
-        atual = self.head
-        valores = []
-        while atual:
-            valores.append(str(atual.valor))
-            atual = atual.prox
-        print(' '.join(valores))
+def write_numeros(lista, file_path):
+    with open(file_path, 'w') as file:
+        for number in lista:
+            file.write(f"{number}\n")
 
+def medir_tempo_memoria(func, *args):
+    tracemalloc.start()
+    inicio = time.perf_counter()
+    resultado = func(*args)
+    fim = time.perf_counter()
+    memoria_atual, memoria_pico = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    tempo_ms = (fim - inicio) * 1000
+    return resultado, tempo_ms, memoria_pico
 
-## LEITURA DO ARQUIVO txt
+def main():
+    arquivo_entrada = "arq.txt"
+    numeros = read_numeros(arquivo_entrada)
 
-with open('arq.txt', 'r', encoding='utf-8-sig') as f:
-    linhas = f.readlines()
+    ## ---> Bubble Sort
+    copia_bubble = numeros.copy()
+    ordenado_bubble, tempo_bubble, pico_bubble = medir_tempo_memoria(bubble_sort, copia_bubble)
+    write_numeros(ordenado_bubble, "arq-saida-bubble.txt")
 
-valores_iniciais = list(map(int, linhas[0].split()))
-qtd = int(linhas[1])
-comandos = [linha.strip() for linha in linhas[2:]]
+    ## ---> Quick Sort
+    copia_quick = numeros.copy()
+    ordenado_quick, tempo_quick, pico_quick = medir_tempo_memoria(quick_sort, copia_quick)
+    write_numeros(ordenado_quick, "arq-saida-quick.txt")
 
-lista = ListaEncadeada()
-for v in reversed(valores_iniciais):
-    lista.inserir(v, 0)
+    print("\nConfiguração do sistema: Ryzen 7 5700x, 16 GB RAM, GTX 1650 SUPER")
 
-for comando in comandos:
-    if not comando:
-        continue
-    partes = comando.split()
-    if partes[0] == 'A':
-        valor = int(partes[1])
-        pos = int(partes[2])
-        lista.inserir(valor, pos)
-    elif partes[0] == 'R':
-        valor = int(partes[1])
-        lista.remover(valor)
-    elif partes[0] == 'P':
-        lista.imprimir()
+    print("\n--- Bubble Sort ---")
+    print(f"Tempo de execução: {tempo_bubble:.2f} ms")
+    print(f"Pico de memória usado: {pico_bubble / 1024:.2f} KB")
+    print("Arquivo de saída: arq-saida-bubble.txt")
+
+    print("\n--- Quick Sort ---")
+    print(f"Tempo de execução: {tempo_quick:.2f} ms")
+    print(f"Pico de memória usado: {pico_quick / 1024:.2f} KB")
+    print("Arquivo de saída: arq-saida-quick.txt")
+
+if __name__ == "__main__":
+    main()
